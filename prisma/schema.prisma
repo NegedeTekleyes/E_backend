@@ -1,0 +1,317 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  STUDENT
+  INSTRUCTOR
+  ADMIN
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model User {
+  id                Int           @id @default(autoincrement())
+  email             String        @unique
+  password          String
+  role              Role          @default(STUDENT)
+  name              String
+  phone             String?       @unique
+  isVerified        Boolean       @default(false)
+  verificationToken String?
+  refreshToken      String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  profile           Profile?
+  courses           Course[]
+  enrollments       Enrollment[]
+  payments          Payment[]
+  certificate       Certificate[]
+  messageSent       Message[]     @relation("SentMessages")
+  messageReceived   Message[]     @relation("ReceivedMessages")
+  earnings          Earning[]
+  subscriptions     Subscription[]
+  reviews           Review[]
+  analytics         UserAnalytics[]
+  wishlist          Wishlist[]
+  notifications     Notification[]
+  quizSubmissions   QuizSubmission[]
+  @@index([email])
+  @@index([phone])
+}
+
+model Profile {
+  id        Int     @id @default(autoincrement())
+  firstName String
+  lastName  String
+  bio       String?
+  avatar    String?
+  userId    Int     @unique
+  user      User    @relation(fields: [userId], references: [id])
+}
+
+model Course {
+  id            Int               @id @default(autoincrement())
+  title         String
+  description   String?
+  price         Float
+  duration      Int
+  category      String
+  language      String
+  instructor    User              @relation(fields: [instructorId], references: [id])
+  instructorId  Int
+  isPublished   Boolean           @default(false)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  videos        Video[]
+  notes         Note[]
+  quizzes       Quiz[]
+  enrollments   Enrollment[]
+  tags          Tag[]
+  reviews       Review[]
+  analytics     CourseAnalytics[]
+  wishlist      Wishlist[]
+  discounts     Discount[]
+  translations  CourseTranslation[]
+  certificates  Certificate[]
+  @@index([instructorId])
+}
+
+model CourseTranslation {
+  id          Int      @id @default(autoincrement())
+  course      Course   @relation(fields: [courseId], references: [id])
+  courseId    Int
+  language    String
+  title       String
+  description String?
+  price       Float
+  duration    Int
+  category    String
+  @@unique([courseId, language])
+  @@index([courseId])
+}
+
+model Enrollment {
+  id          Int       @id @default(autoincrement())
+  student     User      @relation(fields: [studentId], references: [id])
+  studentId   Int
+  course      Course    @relation(fields: [courseId], references: [id])
+  courseId    Int
+  progress    Float     @default(0)
+  enrolledAt  DateTime  @default(now())
+  completedAt DateTime?
+  payment     Payment?
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+}
+
+model Payment {
+  id            Int           @id @default(autoincrement())
+  amount        Float
+  method        String
+  transactionId String        @unique
+  status        PaymentStatus @default(PENDING)
+  user          User          @relation(fields: [userId], references: [id])
+  userId        Int
+  enrollment    Enrollment?   @relation(fields: [enrollmentId], references: [id])
+  enrollmentId  Int?          @unique
+  createdAt     DateTime      @default(now())
+  @@index([userId])
+}
+
+model Video {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  url         String
+  duration    Int
+  course      Course   @relation(fields: [courseId], references: [id])
+  courseId    Int
+  createdAt   DateTime @default(now())
+  @@index([courseId])
+}
+
+model Quiz {
+  id          Int            @id @default(autoincrement())
+  title       String
+  questions   Json
+  course      Course         @relation(fields: [courseId], references: [id])
+  courseId    Int
+  submissions QuizSubmission[]
+  createdAt   DateTime       @default(now())
+  @@index([courseId])
+}
+
+model QuizSubmission {
+  id          Int      @id @default(autoincrement())
+  student     User     @relation(fields: [studentId], references: [id])
+  studentId   Int
+  quiz        Quiz     @relation(fields: [quizId], references: [id])
+  quizId      Int
+  answers     Json
+  score       Float
+  submittedAt DateTime @default(now())
+  @@unique([studentId, quizId])
+  @@index([studentId])
+  @@index([quizId])
+}
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String?
+  fileUrl   String?
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  Int
+  createdAt DateTime @default(now())
+  @@index([courseId])
+}
+
+model Certificate {
+  id          Int      @id @default(autoincrement())
+  student     User     @relation(fields: [studentId], references: [id])
+  studentId   Int
+  course      Course   @relation(fields: [courseId], references: [id])
+  courseId    Int
+  issuedAt    DateTime @default(now())
+  downloadUrl String
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+}
+
+model Message {
+  id          Int      @id @default(autoincrement())
+  sender      User     @relation("SentMessages", fields: [senderId], references: [id])
+  senderId    Int
+  receiver    User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  receiverId  Int
+  content     String
+  sentAt      DateTime @default(now())
+  isRead      Boolean  @default(false)
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Earning {
+  id           Int      @id @default(autoincrement())
+  instructor   User     @relation(fields: [instructorId], references: [id])
+  instructorId Int
+  amount       Float
+  paymentId    Int
+  withdrawn    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  @@index([instructorId])
+}
+
+model Tag {
+  id      Int      @id @default(autoincrement())
+  name    String   @unique
+  courses Course[]
+}
+
+model Review {
+  id          Int      @id @default(autoincrement())
+  student     User     @relation(fields: [studentId], references: [id])
+  studentId   Int
+  course      Course   @relation(fields: [courseId], references: [id])
+  courseId    Int
+  rating      Int
+  comment     String?
+  createdAt   DateTime @default(now())
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+}
+
+model Subscription {
+  id          Int                @id @default(autoincrement())
+  user        User               @relation(fields: [userId], references: [id])
+  userId      Int
+  plan        String
+  status      SubscriptionStatus @default(ACTIVE)
+  startDate   DateTime           @default(now())
+  endDate     DateTime
+  paymentId   Int?
+  createdAt   DateTime           @default(now())
+  @@index([userId])
+}
+
+model UserAnalytics {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  action    String
+  timestamp DateTime @default(now())
+  metadata  Json?
+  @@index([userId])
+}
+
+model CourseAnalytics {
+  id          Int      @id @default(autoincrement())
+  course      Course   @relation(fields: [courseId], references: [id])
+  courseId    Int
+  views       Int      @default(0)
+  enrollments Int      @default(0)
+  completions Int      @default(0)
+  updatedAt   DateTime @updatedAt
+  @@index([courseId])
+}
+
+model Discount {
+  id        Int          @id @default(autoincrement())
+  course    Course       @relation(fields: [courseId], references: [id])
+  courseId  Int
+  code      String       @unique
+  type      DiscountType
+  value     Float
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime     @default(now())
+  @@index([courseId])
+}
+
+model Wishlist {
+  id        Int      @id @default(autoincrement())
+  student   User     @relation(fields: [studentId], references: [id])
+  studentId Int
+  course    Course   @relation(fields: [courseId], references: [id])
+  courseId  Int
+  addedAt   DateTime @default(now())
+  @@unique([studentId, courseId])
+  @@index([studentId])
+  @@index([courseId])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
