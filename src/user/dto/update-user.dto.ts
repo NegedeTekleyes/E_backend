@@ -1,19 +1,15 @@
-import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
-import { UserRole } from '../user.constants';
+import { IsString, IsOptional } from 'class-validator';
 
 export class UpdateUserDto {
-    @IsEmail()
-    @IsOptional()
-    email?: string;
+  @IsString()
+  @IsOptional()
+  name?: string;
 
-    @IsString()
-    @IsOptional()
-    phone?: string;
+  @IsString()
+  @IsOptional()
+  phone?: string;
 
-
-    @IsEnum(UserRole)
-    @IsOptional()
-    role?: UserRole;
-
-    
+  @IsString()
+  @IsOptional()
+  password?: string;
 }

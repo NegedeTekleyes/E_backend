@@ -1,11 +1,35 @@
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
 
 
 
 export class CreateCourseDto {
-    title:string;
-    description?:string;
+    @IsString()
+    @IsNotEmpty()
+    title: string;
+
+    @IsString()
+    @IsOptional()
+    description?: string;
+
+    @IsNumber()
+    @IsNotEmpty()
+    duration: number; // in minute
+
+
+
+    @IsNumber()
+    @IsNotEmpty()
     price: number;
-    duration: number;
+
+    @IsString()
+    @IsNotEmpty()
     category: string;
+
+    @IsString()
+    @IsNotEmpty()
     language: string;
+
+    @IsBoolean()
+    @IsOptional()
+    isPublished?: boolean;
 }
