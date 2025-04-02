@@ -19,29 +19,32 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const verificationToken = this.jwtService.sign({ email: dto.email }, { expiresIn: '1d' });
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hashedPassword,
-        role: dto.role,
-        name: dto.name,
-        phone: dto.phone,
-        verificationToken,
-      },
-    });
+    try { // Add try-catch here
+      const user = await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          role: dto.role,
+          name: dto.name,
+          phone: dto.phone,
+          verificationToken,
+        },
+      });
 
-    const emailResult = await this.emailService.sendVerificationEmail(dto.email, verificationToken, 'en');
-    if (!emailResult.success) {
-      return {
-        message: 'User registered successfully. Email sending failed - use this token to verify manually.',
-        verificationToken,
-      };
-    }
+      const emailResult = await this.emailService.sendVerificationEmail(dto.email, verificationToken, 'en');
+      if (!emailResult.success) {
+        return {
+          message: 'User registered successfully. Email sending failed - use this token to verify manually.',
+          verificationToken,
+        };
+      }
 
-    return { message: 'User registered successfully. Please verify your email.'};
-  } catch(error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      throw new BadRequestException('Email or phone already exists');
+      return { message: 'User registered successfully. Please verify your email.' };
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new BadRequestException('Email or phone already exists');
+      }
+      throw error; // Re-throw unexpected errors
     }
   }
 
@@ -115,6 +118,9 @@ export class AuthService {
 
   private generateToken(user: any) {
     const payload = { email: user.email, sub: user.id, role: user.role };
-    return { access_token: this.jwtService.sign(payload, { expiresIn: '1h' }) };
+    return {
+      access_token: this.jwtService.sign(payload, { expiresIn: '1h' }),
+      refresh_token: this.jwtService.sign(payload, { expiresIn: '7d' }), // Add refresh_token here
+    };
   }
 }
