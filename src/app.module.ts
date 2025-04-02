@@ -13,8 +13,8 @@ import { ConfigModule } from '@nestjs/config';
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true,
-      envFilePath: '.env',
+      isGlobal: true, //makes config service available globally
+      envFilePath: '.env', //specify the path to your .env file
     }),
     AuthModule,
     UserModule,
