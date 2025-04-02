@@ -49,7 +49,7 @@ export class CoursesService {
       },
     });
     if (!course) {
-      throw new NotFoundException('Course not found');
+      throw new NotFoundException('Courses not found');
     }
     return this.mapCourseToResponse(course);
   }
@@ -57,7 +57,7 @@ export class CoursesService {
   async updateCourse(id: number, dto: UpdateCourseDto, userId: number, userRole: string) {
     const course = await this.prisma.course.findUnique({ where: { id } });
     if (!course) {
-      throw new NotFoundException('Course not found');
+      throw new NotFoundException('Courses not found');
     }
     if (course.instructorId !== userId && userRole !== 'ADMIN') {
       throw new ForbiddenException('Only the course instructor or admin can update this course');
