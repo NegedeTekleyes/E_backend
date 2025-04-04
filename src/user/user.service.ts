@@ -4,6 +4,7 @@ import { UserRole } from './user.constants';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { User } from '@prisma/client';
 
 @Injectable()
 export class UserService {
@@ -43,12 +44,17 @@ export class UserService {
     }
 
     async getAllUsers(requestingUserRole: UserRole) {
+
+        if (!Object.values(UserRole).includes(requestingUserRole)) {
+            throw new ForbiddenException('Invalid user role');
+
+        } 
         if (requestingUserRole !== UserRole.ADMIN) {
             throw new ForbiddenException('Only admins can view all users');
         }
 
-        const users = await this.prisma.user.findMany();
-        return users.map(this.mapUserToResponseDto);
+        const users = await this.prisma.user.findMany()
+         return users.map(this.mapUserToResponseDto);
     }
     
     async updateUser(id: number, dto: UpdateUserDto, requestingUserRole: UserRole) {
@@ -60,13 +66,17 @@ export class UserService {
         if (!user) {
             throw new NotFoundException('User not found');
         }
-        if (requestingUserRole !== UserRole.ADMIN && user.id === id) {
+        if (requestingUserRole !== UserRole.ADMIN && user.id !== id) {
             throw new ForbiddenException('Cannot update other users');
+        }
+        const updateData = { ...dto };
+        if (dto.password) {
+            updateData.password = await bcrypt.hash(dto.password, 10);
         }
 
         const updatedUser = await this.prisma.user.update({
             where: { id },
-            data: dto,
+            data: updateData,
         });
         return this.mapUserToResponseDto(updatedUser);
 
@@ -76,14 +86,14 @@ export class UserService {
         if (requestingUserRole !== UserRole.ADMIN) {
             throw new ForbiddenException('Only admins can delete users');
         }
-        const user = await this.prisma.user.findUnique({
-            where: {
-                id
-            }
-        });
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+        // const user = await this.prisma.user.findUnique({
+        //     where: {
+        //         id
+        //     }
+        // });
+        // if (!user) {
+        //     throw new NotFoundException('User not found');
+        // }
         await this.prisma.user.delete({
             where: {
                 id
@@ -92,7 +102,7 @@ export class UserService {
         return {message: 'User deleted successfully'};
     }
 
-    private mapUserToResponseDto(user: any) {
+    private mapUserToResponseDto(user: User) {
         return {
             id: user.id,
             email: user.email,

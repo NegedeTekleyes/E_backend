@@ -1,3 +1,4 @@
+
 import { Injectable, BadRequestException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
@@ -19,29 +20,32 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(dto.password, 10);
     const verificationToken = this.jwtService.sign({ email: dto.email }, { expiresIn: '1d' });
 
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        password: hashedPassword,
-        role: dto.role,
-        name: dto.name,
-        phone: dto.phone,
-        verificationToken,
-      },
-    });
+    try { 
+       await this.prisma.user.create({
+        data: {
+          email: dto.email,
+          password: hashedPassword,
+          role: dto.role,
+          name: dto.name,
+          phone: dto.phone || null, //optional
+          verificationToken,
+        },
+      });
 
-    const emailResult = await this.emailService.sendVerificationEmail(dto.email, verificationToken, 'en');
-    if (!emailResult.success) {
-      return {
-        message: 'User registered successfully. Email sending failed - use this token to verify manually.',
-        verificationToken,
-      };
-    }
+      const emailResult = await this.emailService.sendVerificationEmail(dto.email, verificationToken, 'en');
+      if (!emailResult.success) {
+        return {
+          message: 'User registered successfully. Email sending failed - use this token to verify manually.',
+          verificationToken,
+        };
+      }
 
-    return { message: 'User registered successfully. Please verify your email.'};
-  } catch(error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-      throw new BadRequestException('Email or phone already exists');
+      return { message: 'User registered successfully. Please verify your email.' };
+    } catch (error) { // Catch block now properly aligned
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new BadRequestException('Email or phone already exists');
+      }
+      throw error; // Re-throw unexpected errors
     }
   }
 
@@ -88,6 +92,15 @@ export class AuthService {
     } catch (error) {
       throw new BadRequestException('Invalid or expired verification token');
     }
+  }
+
+  async getCurrentUser(userId: number) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, email: true, name: true, role: true },
+    });
+    if (!user) throw new UnauthorizedException('User not found!')
+    return user;
   }
 
   async refreshToken(refreshToken: string) {

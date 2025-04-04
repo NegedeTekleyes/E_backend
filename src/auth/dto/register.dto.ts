@@ -14,6 +14,7 @@ export class RegisterDto {
     role: Role;
 
     @IsNotEmpty({ message: 'Name is required' })
+    @IsOptional()
     name: string;
 
     @IsOptional()
