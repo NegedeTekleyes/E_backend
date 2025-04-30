@@ -18,6 +18,11 @@ enum PaymentStatus {
   COMPLETED
   FAILED
 }
+ enum EnrollmentStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+ }
 
 enum SubscriptionStatus {
   ACTIVE
@@ -118,6 +123,7 @@ model Enrollment {
   course      Course    @relation(fields: [courseId], references: [id])
   courseId    Int
   progress    Float     @default(0)
+  status      EnrollmentStatus @default(PENDING)
   enrolledAt  DateTime  @default(now())
   completedAt DateTime?
   payment     Payment?

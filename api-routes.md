@@ -21,7 +21,7 @@ Response: {
   "id": 1,
   "email": "user@example.com",
   "name": "User Name",
-  "phone": "1234567890",
+  "phone": "+25191234567809",
   "role": "INSTRUCTOR",
   "isVerified": false,
   "createdAt": "2025-04-07T12:00:00Z",

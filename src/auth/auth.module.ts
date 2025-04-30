@@ -13,7 +13,7 @@ import { ConfigModule } from '@nestjs/config';
         PrismaModule,
         ConfigModule,
         JwtModule.register({
-            secret: process.env.JWT_SECRET  || 'your-secret',
+            secret: process.env.JWT_SECRET,
             signOptions: {expiresIn: '1h'},
         }),
     ],

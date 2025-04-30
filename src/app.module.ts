@@ -2,14 +2,12 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from './auth/auth.module';
 import { UserModule } from './user/user.module';
 import { CoursesModule } from './courses/courses.module';
-import { VideosModule } from './videos/videos.module';
-import { NotesModule } from './notes/notes.module';
-import { QuizzesModule } from './quizzes/quizzes.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { EnrollmentModule } from './enrollment/enrollment.module';
 import { ConfigModule } from '@nestjs/config';
-
+import { ContentModule } from './content/content.module';
+import { CertificateModule } from './certificate/certificate.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -19,9 +17,8 @@ import { ConfigModule } from '@nestjs/config';
     AuthModule,
     UserModule,
     CoursesModule,
-    VideosModule,
-    NotesModule,
-    QuizzesModule,
+    ContentModule,
+    CertificateModule,
     PaymentsModule,
     PrismaModule,
     EnrollmentModule],
